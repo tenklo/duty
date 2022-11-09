@@ -172,7 +172,7 @@ Example:
 
 (defun duty-id-remove-spaces (text)
   "Replace spaces in `TEXT' with '-'."
-  (s-replace " " "-" text))
+  (replace-regexp-in-string (regexp-quote " ") "-" text t t))
 
 (defun duty-work-new-holidays-org-project-for (date1 date2)
   (let* ((calendar-date-display-form (diary-date-display-form))
