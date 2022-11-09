@@ -1,4 +1,4 @@
-;;; duty.el --- working on your workdays
+;;; duty.el --- working with your workdays
 
 ;; Copyright (C) 2022  Karsten Klöss
 
