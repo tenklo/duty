@@ -170,6 +170,10 @@ Example:
     (message (int-to-string date))
     date))
 
+(defun duty-id-remove-spaces (text)
+  "Replace spaces in `TEXT' with '-'."
+  (s-replace " " "-" text))
+
 (defun duty-work-new-holidays-org-project-for (date1 date2)
   (let* ((calendar-date-display-form (diary-date-display-form))
          (date1 (calendar-absolute-from-gregorian date1))
@@ -182,7 +186,7 @@ Example:
                         (concat (format-time-string "%d. %B %Y" (calendar-time-from-absolute start-date 0))
                                 " - "
                                 (format-time-string "%d. %B %Y" (calendar-time-from-absolute end-date 0)))))
-         (days-string-id (duty-yas-id-remove-spaces days-string))
+         (days-string-id (duty-id-remove-spaces days-string))
          (diary-date-string (if (> day-count 1)
                                 (format "(diary-block %s %s)"
                                         (calendar-date-string (calendar-gregorian-from-absolute start-date) nil t)
