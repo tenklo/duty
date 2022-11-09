@@ -307,7 +307,6 @@ Example:
     (duty-work-new-holidays-org-project-for date1 date2)))
 
 (defun duty-calendar-non-weekend-or-official-holiday-days ()
-  (interactive)
   (let* ((date1 (calendar-absolute-from-gregorian
                  (calendar-cursor-to-date t)))
          (date2 (calendar-absolute-from-gregorian
