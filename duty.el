@@ -103,6 +103,7 @@
 
 ;;;; Requirements
 
+(require 'cal-dst)
 (require 'calendar)
 (require 'diary-lib)
 
