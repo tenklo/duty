@@ -110,7 +110,8 @@
 ;;;; Support functions
 
 (defun duty-inform-about-todos ()
-  (message "Refer to M-x find-library RET duty RET for things to set up to use this package."))
+  "Inform user about how to find out how to use this package."
+  (message "Refer to Commentary in M-x find-library RET duty RET for things to set up to use this package."))
 
 (defun duty-work-day-p (date1)
   "Return non-nil when `date' is on a work day according to `duty-work-days'."
@@ -136,6 +137,7 @@ Example:
     (duty-work-days)))
 
 (defun duty-next-day-work-day-p (date)
+  "Returns non-nil where the next day to `date' is a work day, according to `duty-work-days'."
   (let ((next-day (duty-increment-gregorian-date date)))
     (duty-work-day-p next-day)))
 
@@ -183,6 +185,7 @@ Example:
     diff))
 
 (defun duty-find-work-day-before (date)
+  "Returns the last workday before `date'."
   (message "Starting with %s" (int-to-string date))
   (let ((date (- date 1)))
     (while (not (duty-work-day-p (calendar-gregorian-from-absolute date)))
@@ -196,6 +199,28 @@ Example:
   (replace-regexp-in-string (regexp-quote " ") "-" text t t))
 
 (defun duty-work-new-holidays-org-project-for (date1 date2)
+  "Adds a new task to `duty-org-refile-target'.
+
+These are tasks for requesting the just selected days as vacation
+days from your employer, waiting for acceptance/decline, a task
+to add the new vacation day(s) to `duty-vacation-days' (including
+the correct diary date expression), and in the default version
+schedules two tasks the last work day before your vacation to
+inform colleagues about loose strings and set up an absence note.
+
+These tasks are highly subjective and you should probably
+customize these - maybe by copying und overwriting the function.
+
+There will also be a property 'DURATION', telling you the number
+of days of your absence.  This is useful to be used with
+`org-columns' and provides an overview over how many days you
+took in total.  By refiling these tasks to e.g. a heading for
+every year, you will be able to see how many vacation days you
+took that year at a glance (and know how many you should have
+left to take).
+
+This functionality (and more) is similarly available in
+`calendar' via `duty-calendar-count-days-region'."
   (let* ((calendar-date-display-form (diary-date-display-form))
          (date1 (calendar-absolute-from-gregorian date1))
          (date2 (calendar-absolute-from-gregorian date2))
@@ -242,14 +267,26 @@ Example:
        "SCHEDULED: <" work-day-before-string " 15:30>\n"))))
 
 (defun duty-is-official-holiday-p (date)
+  "Return non-nil when `date' is on a official holiday.
+
+Official holidays in this context are considered days you are not
+required to work on by law in your area. It queries
+`holiday-local-holidays' for this purpose, so you should
+configure your holidays there."
   (let ((calendar-holidays holiday-local-holidays))
     (calendar-check-holidays date)))
 
 (defun duty-is-weekend-p (date)
+  "Returns non-nil if `date' is on a weekend."
   (memq
    (calendar-day-of-week date) calendar-weekend-days))
 
 (defun duty-count-non-weekend-or-official-holiday-days (d1 d2)
+  "Return number of days that are neither weekend nor official holidays between `d1' and `d2'.
+
+Weekend days are days that return non-nil to `duty-is-weekend-p'.
+
+Official holidays are days that return non-nil to `duty-is-official-holiday-p'."
   (let* ((tmp-date (if (< d1 d2) d1 d2))
          (end-date (if (> d1 d2) d1 d2))
          (days 0))
@@ -264,6 +301,7 @@ Example:
 ;;;; Interactive functions
 
 (defun duty-calendar-count-non-work-days-region ()
+  "Count the number of days (inclusive) you are not supposed to work on between point and the mark."
   (interactive)
   (let* ((date1 (calendar-cursor-to-date t))
          (date2 (or (car calendar-mark-ring)
@@ -277,7 +315,7 @@ Example:
              (calendar-date-string date2))))
 
 (defun duty-calendar-count-work-days-region ()
-  "Count the number of work days (inclusive) between point and the mark."
+  "Count the number of workdays (inclusive) between point and the mark."
   (interactive)
   (let* ((date1 (calendar-absolute-from-gregorian
                  (calendar-cursor-to-date t)))
@@ -309,6 +347,24 @@ Example:
              (calendar-date-string (calendar-gregorian-from-absolute date2)))))
 
 (defun duty-calendar-count-days-region (&optional arg)
+  "Count days between point and the mark.
+
+Without prefix argument, simply call `calendar-count-days-region'
+to count the days in a region.  Because of this, this command
+makes a fine replacement for `calendar-count-days-region', by
+default bound to M-= in `calendar-mode-map'.
+
+With C-u prefix arg, call `duty-calendar-count-work-days-region'
+to count the days you are/were supposed to work on in a region according to `duty-work-days'.
+
+With C-u C-u prefix arg, call
+`duty-calendar-count-non-work-days-region' to count the days you
+are/were not supposed to work on in a region.
+
+With C-u C-u C-u prefix arg, call
+`duty-calendar-count-vacation-days-region' to count the days you
+are on vacation according to `duty-vacation-days'.
+"
   (interactive "P")
   (pcase arg
     ('nil
