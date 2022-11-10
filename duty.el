@@ -95,8 +95,6 @@
 ;; Use `duty-inform-about-todos' in case a function is used that
 ;; would require some user setup beforehand
 
-;; Customize option for `duty-holiday-days', defaulting to holiday-local-holidays(?).
-
 ;; Make refiles possible to headings? Maybe utilize org capture functionality?
 
 ;; Make order of `duty-calendar-count-days-region' functions
@@ -109,6 +107,19 @@
 (require 'cal-dst)
 (require 'calendar)
 (require 'diary-lib)
+
+;;;; Customization
+
+(defgroup duty nil
+  "Settings for `duty'."
+  :group 'org
+  :link '(url-link "http://github.com/tenklo/duty"))
+
+(defcustom duty-holiday-days 'holiday-local-holidays
+  "The holidays you are not supposed to work on.
+
+Can either be a variable containing a list of holidays, or a list itself."
+  :type '(choice variable list))
 
 ;;;; Support functions
 
