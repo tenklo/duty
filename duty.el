@@ -49,7 +49,7 @@
 ;; Can be used in org agenda.
 ;; Example:
 ;; ** Task
-;; <%%(kk/asvin-work-days)>"
+;; <%%(old-employer-work-days)>"
 ;;   (and
 ;;    (not (duty-is-weekend-p date))
 ;;    (not (duty-is-official-holiday-p date))
