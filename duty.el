@@ -121,6 +121,10 @@
 Can either be a variable containing a list of holidays, or a list itself."
   :type '(choice variable list))
 
+(defcustom duty-org-refile-target "~/new-vacation.org"
+  "Variable containing the holidays you are not supposed to work on."
+  :type '(choice string variable))
+
 ;;;; Support functions
 
 (defun duty-inform-about-todos ()
