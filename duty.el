@@ -28,6 +28,26 @@
 ;; count workdays, non workdays and vacation days in a region,
 ;; similarly to `calendar-count-days-region'.
 
+;; Starting the process for requesting new vacation days means marking
+;; a region in the calendar and calling `duty-calendar-new-holidays'.
+;; This will throw a new task with subtasks at the end of your
+;; `duty-org-refile-target'.  These are tasks for requesting the just
+;; selected days as vacation days from your employer, waiting for
+;; acceptance/decline, a task to add the new vacation day(s) to
+;; `duty-vacation-days' (including the correct diary date expression),
+;; and in the default version schedules two tasks the last work day
+;; before your vacation to inform colleagues about loose strings and
+;; set up an absence note.  These tasks are highly subjective and you
+;; should probably customize these - maybe by copying und overwriting
+;; the function.  There will also be a property "DURATION", telling
+;; you the number of days of your absence.  This is useful to be used
+;; with `org-columns' and provides an overview over how many days you
+;; took in total.  By refiling these tasks to e.g. a heading for every
+;; year, you will be able to see how many vacation days you took that
+;; year at a glance (and know how many you should have left to take).
+;; This functionality is similarly available in `calendar' via
+;; `duty-calendar-count-days-region'.
+
 ;; You'll have to maintain two functions: `duty-work-days' and
 ;; `duty-vacation-days'.  These should be made up of `diary-lib'
 ;; functions like `diary-date', `diary-block' and `diary-float'.
