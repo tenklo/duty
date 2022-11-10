@@ -322,10 +322,12 @@ Example:
 
 (defun duty-calendar-new-holidays ()
   (interactive)
-  (let* ((date1 (calendar-cursor-to-date t))
-         (date2 (or (car calendar-mark-ring)
-                    (error "No mark set in this buffer"))))
-    (duty-work-new-holidays-org-project-for date1 date2)))
+  (if (equal major-mode 'calendar-mode)
+      (let* ((date1 (calendar-cursor-to-date t))
+             (date2 (or (car calendar-mark-ring)
+                        (error "No mark set in this buffer"))))
+        (duty-work-new-holidays-org-project-for date1 date2))
+    (error "This command is supposed to be used in calendar-mode.")))
 
 (defun duty-calendar-non-weekend-or-official-holiday-days ()
   (let* ((date1 (calendar-absolute-from-gregorian
