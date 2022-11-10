@@ -99,6 +99,9 @@
 
 ;; Make refiles possible to headings? Maybe utilize org capture functionality?
 
+;; Make order of `duty-calendar-count-days-region' functions
+;; configurable (how many prefix args call which function)
+
 ;;; Code:
 
 ;;;; Requirements
