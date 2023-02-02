@@ -137,16 +137,19 @@ For example useful useful to add some tags. Remember to add a leading Space."
   "Inform user about how to find out how to use this package."
   (message "Refer to Commentary in M-x find-library RET duty RET for things to set up to use this package."))
 
-(defun duty-work-day-p (date1)
+(defun duty-day-in-func-p (func date1)
   "Return non-nil when `date' is on a work day according to `duty-work-days'."
   (let ((entry t)
         (date date1))
-    (duty-work-days)))
+    (funcall func)))
+
+(defun duty-work-day-p (date1)
+  "Return non-nil when `date' is on a work day according to `duty-work-days'."
+  (duty-day-in-func-p #'duty-work-days date1))
 
 (defun duty-vacation-day-p (date)
   "Return non-nil when `date' is on a work day according to `duty-work-days'."
-  (let ((entry t))
-    (duty-vacation-days)))
+  (duty-day-in-func-p #'duty-vacation-days date))
 
 (defun duty-days-where-next-day-is-a-work-day ()
   "Days where the next day is a work day, according to `duty-work-days'.
@@ -171,33 +174,51 @@ Example:
 (defun duty-decrement-gregorian-date (date)
   (calendar-gregorian-from-absolute (1- (calendar-absolute-from-gregorian date))))
 
-(defun duty-count-work-days-between (date1 date2)
-  "Count work days between `date1' and `date2'."
+(defun duty-count-days-between-dates-in-function (date1 date2 func)
   (let ((start-date (if (< date1 date2) date1 date2))
         (end-date (if (> date1 date2) date1 date2))
         (work-days 0))
     (while (<= start-date end-date)
-      (when (duty-work-day-p (calendar-gregorian-from-absolute start-date))
+      (when (duty-day-in-func-p func (calendar-gregorian-from-absolute start-date))
         (cl-incf work-days))
       (cl-incf start-date))
     work-days))
 
-(defun duty-count-vacation-days-between (date1 date2)
-  "Count work days between `date1' and `date2'."
+(defun duty-count-days-not-between-dates-in-function (date1 date2 func)
   (let ((start-date (if (< date1 date2) date1 date2))
         (end-date (if (> date1 date2) date1 date2))
-        (vacation-days 0))
+        (work-days 0))
     (while (<= start-date end-date)
-      (when (duty-vacation-day-p (calendar-gregorian-from-absolute start-date))
-        (cl-incf vacation-days))
+      (when (not (duty-day-in-func-p func (calendar-gregorian-from-absolute start-date)))
+        (cl-incf work-days))
       (cl-incf start-date))
-    vacation-days))
+    work-days))
+
+(defun duty-count-work-days-between (date1 date2)
+  "Count work days between `date1' and `date2'."
+  (duty-count-days-between-dates-in-function date1 date2 #'duty-work-days))
+
+(defun duty-count-vacation-days-between (date1 date2)
+  "Count work days between `date1' and `date2'."
+  (duty-count-days-between-dates-in-function date1 date2 #'duty-vacation-days))
 
 (defun duty-count-days (d1 d2)
   (let* ((days (- (calendar-absolute-from-gregorian d1)
                   (calendar-absolute-from-gregorian d2)))
          (days (1+ (if (> days 0) days (- days)))))
     days))
+
+(defun duty-count-days-not-between-dates-in-function (date1 date2 func)
+  "Count non work days between `date1' and `date2'."
+  (let* ((d1 (calendar-absolute-from-gregorian date1))
+         (d2 (calendar-absolute-from-gregorian date2))
+         (func-days (duty-count-days-between-dates-in-function d1 d2 func))
+         (days (duty-count-days date1 date2))
+         (diff (- days func-days)))
+    diff))
+
+(defun duty-count-non-work-days-between (date1 date2)
+  (duty-count-days-not-between-dates-in-function date1 date2 #'duty-work-days))
 
 (defun duty-count-non-work-days-between (date1 date2)
   "Count non work days between `date1' and `date2'."
@@ -252,7 +273,7 @@ This functionality (and more) is similarly available in
          (start-date (if (< date1 date2) date1 date2))
          (end-date (if (> date1 date2) date1 date2))
          (days-string (if (equal day-count 1)
-                          (format-time-string "%d. %B %Y" start-date)
+                          (format-time-string "%d. %B %Y" (calendar-time-from-absolute start-date 0))
                         (concat (format-time-string "%d. %B %Y" (calendar-time-from-absolute start-date 0))
                                 " - "
                                 (format-time-string "%d. %B %Y" (calendar-time-from-absolute end-date 0)))))
@@ -264,11 +285,14 @@ This functionality (and more) is similarly available in
                               (format "(diary-date %s)"
                                       (calendar-date-string (calendar-gregorian-from-absolute start-date) nil t))))
          (work-day-before-start-date (duty-find-work-day-before start-date))
+         (heading-addition (if duty-heading-addition
+                               duty-heading-addition
+                             ""))
          (work-day-before-string (format-time-string "%Y-%m-%d %a" (calendar-time-from-absolute work-day-before-start-date 0))))
-    (with-current-buffer (find-file-noselect duty-org-refile-target)
+    (with-current-buffer (find-file-noselect duty-org-refile-target) ; check if duty-org refile target is variable, then use its value, else use as string
       (goto-char (point-max))
       (insert
-       "\n* TODO " days-string "\n"
+       "\n* TODO " days-string heading-addition "\n"
        ":PROPERTIES:\n"
        ":DURATION: " (number-to-string day-count) "\n"
        ":END:\n"
@@ -288,7 +312,9 @@ This functionality (and more) is similarly available in
        "- etwas nicht fertig geworden?\n"
        "- Termine, die ich nicht wahrnehmen kann?\n"
        "** TODO Abwesenheitsbenachrichtigung aktivieren\n"
-       "SCHEDULED: <" work-day-before-string " 15:30>\n"))))
+       "SCHEDULED: <" work-day-before-string " 15:30>\n")
+      (org-align-all-tags))
+    (find-file-other-window duty-org-refile-target)))
 
 (defun duty-is-official-holiday-p (date)
   "Return non-nil when `date' is on a official holiday.
@@ -322,53 +348,66 @@ Official holidays are days that return non-nil to `duty-is-official-holiday-p'."
         (cl-incf tmp-date)))
     days))
 
+(defun duty-calendar-count-days-in-func (func kind-of-days)
+  (let* ((date1 (calendar-absolute-from-gregorian
+                 (calendar-cursor-to-date t)))
+         (date2 (calendar-absolute-from-gregorian
+                 (or (car calendar-mark-ring)
+                     (error "No mark set in this buffer"))))
+         (work-days (duty-count-days-between-dates-in-function date1 date2 func)))
+    (message "There %s %s %s %s between %s and %s."
+             (if (equal work-days 1) "is" "are")
+             work-days
+             kind-of-days
+             (if (equal work-days 1) "day" "days")
+             (calendar-date-string (calendar-gregorian-from-absolute date1))
+             (calendar-date-string (calendar-gregorian-from-absolute date2)))))
+
+(defun duty-calendar-count-days-not-in-func (func kind-of-days)
+    (let* ((date1 (calendar-cursor-to-date t))
+         (date2 (or (car calendar-mark-ring)
+                    (error "No mark set in this buffer")))
+         (non-work-days (duty-count-days-not-between-dates-in-function date1 date2 func)))
+    (message "There %s %s non-%s %s between %s and %s."
+             (if (equal non-work-days 1) "is" "are")
+             non-work-days
+             kind-of-days
+             (if (equal non-work-days 1) "day" "days")
+             (calendar-date-string date1)
+             (calendar-date-string date2))))
+
 ;;;; Interactive functions
 
 (defun duty-calendar-count-non-work-days-region ()
   "Count the number of days (inclusive) you are not supposed to work on between point and the mark."
   (interactive)
-  (let* ((date1 (calendar-cursor-to-date t))
-         (date2 (or (car calendar-mark-ring)
-                    (error "No mark set in this buffer")))
-         (non-work-days (duty-count-non-work-days-between date1 date2)))
-    (message "There %s %s non-work %s between %s and %s."
-             (if (equal non-work-days 1) "is" "are")
-             non-work-days
-             (if (equal non-work-days 1) "day" "days")
-             (calendar-date-string date1)
-             (calendar-date-string date2))))
+  (duty-calendar-count-days-not-in-func #'duty-work-days "work"))
 
 (defun duty-calendar-count-work-days-region ()
-  "Count the number of workdays (inclusive) between point and the mark."
+  "Count the number of days (inclusive) you are not supposed to work on between point and the mark."
   (interactive)
-  (let* ((date1 (calendar-absolute-from-gregorian
-                 (calendar-cursor-to-date t)))
-         (date2 (calendar-absolute-from-gregorian
-                 (or (car calendar-mark-ring)
-                     (error "No mark set in this buffer"))))
-         (work-days (duty-count-work-days-between date1 date2)))
-    (message "There %s %s work %s between %s and %s."
-             (if (equal work-days 1) "is" "are")
-             work-days
-             (if (equal work-days 1) "day" "days")
-             (calendar-date-string (calendar-gregorian-from-absolute date1))
-             (calendar-date-string (calendar-gregorian-from-absolute date2)))))
+  (duty-calendar-count-days-in-func #'duty-work-days "work"))
 
 (defun duty-calendar-count-vacation-days-region ()
   "Count the number of vacation days (inclusive) between point and the mark."
   (interactive)
+  (duty-calendar-count-days-in-func #'duty-vacation-days "vacation"))
+
+(defun duty-calendar-non-weekend-or-official-holiday-days ()
+  (interactive)
   (let* ((date1 (calendar-absolute-from-gregorian
                  (calendar-cursor-to-date t)))
          (date2 (calendar-absolute-from-gregorian
                  (or (car calendar-mark-ring)
                      (error "No mark set in this buffer"))))
-         (vacation-days (duty-count-vacation-days-between date1 date2)))
-    (message "There %s %s vacation %s between %s and %s."
-             (if (equal vacation-days 1) "is" "are")
-             vacation-days
-             (if (equal vacation-days 1) "day" "days")
+         (days (duty-count-non-weekend-or-official-holiday-days date1 date2)))
+    (message "There %s %s %s between %s and %s that %s neither on a weekend or a holiday."
+             (if (equal days 1) "is" "are")
+             days
+             (if (equal days 1) "day" "days")
              (calendar-date-string (calendar-gregorian-from-absolute date1))
-             (calendar-date-string (calendar-gregorian-from-absolute date2)))))
+             (calendar-date-string (calendar-gregorian-from-absolute date2))
+             (if (equal days 1) "is" "are"))))
 
 (defun duty-calendar-count-days-region (&optional arg)
   "Count days between point and the mark.
@@ -408,21 +447,6 @@ are on vacation according to `duty-vacation-days'.
                         (error "No mark set in this buffer"))))
         (duty-work-new-holidays-org-project-for date1 date2))
     (error "This command is supposed to be used in calendar-mode.")))
-
-(defun duty-calendar-non-weekend-or-official-holiday-days ()
-  (let* ((date1 (calendar-absolute-from-gregorian
-                 (calendar-cursor-to-date t)))
-         (date2 (calendar-absolute-from-gregorian
-                 (or (car calendar-mark-ring)
-                     (error "No mark set in this buffer"))))
-         (days (duty-count-non-weekend-or-official-holiday-days date1 date2)))
-    (message "There %s %s %s between %s and %s that %s neither on a weekend or a holiday."
-             (if (equal days 1) "is" "are")
-             days
-             (if (equal days 1) "day" "days")
-             (calendar-date-string (calendar-gregorian-from-absolute date1))
-             (calendar-date-string (calendar-gregorian-from-absolute date2))
-             (if (equal days 1) "is" "are"))))
 
 (provide 'duty)
 ;;; duty.el ends here
