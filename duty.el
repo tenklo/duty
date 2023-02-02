@@ -125,6 +125,12 @@ Can either be a variable containing a list of holidays, or a list itself."
   "Target file your entries created by `duty-calendar-new-holidays' get refiled to."
   :type 'string)
 
+(defcustom duty-heading-addition nil
+  "Text added to main heading created by `duty-calendar-new-holidays'.
+
+For example useful useful to add some tags. Remember to add a leading Space."
+  :type 'string)
+
 ;;;; Support functions
 
 (defun duty-inform-about-todos ()
