@@ -302,7 +302,7 @@ This functionality (and more) is similarly available in
        ":END:\n"
        "** TODO Bestätigung/Ablehnung abwarten\n"
        ":PROPERTIES:\n"
-       ":ID:       " days-string "-reply\n"
+       ":ID:       " days-string-id "-reply\n"
        ":END:\n"
        "** TODO ggf. Eintrag in work-days.el\n"
        diary-date-string "\n"
