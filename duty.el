@@ -297,6 +297,7 @@ This functionality (and more) is similarly available in
        ":DURATION: " (number-to-string day-count) "\n"
        ":END:\n"
        "** TODO anfragen\n"
+       "SCHEDULED: " (format-time-string "<%Y-%m-%d %a>") "\n"
        ":PROPERTIES:\n"
        ":TRIGGER:  " days-string-id "-reply(WAIT)\n"
        ":END:\n"
