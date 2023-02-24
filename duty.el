@@ -239,9 +239,9 @@ Example:
     (message (int-to-string date))
     date))
 
-(defun duty-id-remove-spaces (text)
+(defun duty-id-cleanup (text)
   "Replace spaces in `TEXT' with '-'."
-  (replace-regexp-in-string (regexp-quote " ") "-" text t t))
+  (replace-regexp-in-string " \\|[^[:alnum:][:digit:]]" "-" text t t))
 
 (defun duty-work-new-holidays-org-project-for (date1 date2)
   "Adds a new task to `duty-org-refile-target'.
@@ -277,7 +277,7 @@ This functionality (and more) is similarly available in
                         (concat (format-time-string "%d. %B %Y" (calendar-time-from-absolute start-date 0))
                                 " - "
                                 (format-time-string "%d. %B %Y" (calendar-time-from-absolute end-date 0)))))
-         (days-string-id (duty-id-remove-spaces days-string))
+         (days-string-id (duty-id-cleanup days-string))
          (diary-date-string (if (> day-count 1)
                                 (format "(diary-block %s %s)"
                                         (calendar-date-string (calendar-gregorian-from-absolute start-date) nil t)
